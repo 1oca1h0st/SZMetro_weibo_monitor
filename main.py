@@ -32,7 +32,8 @@ def create_table():
         (id TEXT,
         text TEXT,
         edit_count TEXT,
-        noti_count TEXT);
+        noti_count TEXT,
+        scheme TEXT);
         """
         #total = """CREATE TABLE IF NOT EXISTS total (total TEXT)"""
         conn.execute(content)
@@ -65,6 +66,7 @@ def get_sz_metro():
                     edit_count = i['mblog']['edit_count']
                 except:
                     edit_count = 0
+                scheme = i['scheme']
                 sql = "select * from content where id = %s and edit_count = %s" % (
                     str(id), str(edit_count))
                 cur.execute(sql)
@@ -72,8 +74,8 @@ def get_sz_metro():
                     # 有记录，不进行通知
                     print("已有该条记录，ID为：%s" % str(id))
                 else:
-                    insert_sql = "insert into content values ('%s', '%s', '%s', '0')" % (
-                        id, text, edit_count)
+                    insert_sql = "insert into content values ('%s', '%s', '%s', '0', '%s')" % (
+                        id, text, edit_count, scheme)
                     conn.execute(insert_sql)
                     conn.commit()
                     print("%s-%s-%s" % (str(id), text, str(edit_count)))
@@ -83,11 +85,12 @@ def get_sz_metro():
 
 
 def bark_notification(id):
-    sql = "select text from content where id = %s" % str(id)
+    sql = "select text,scheme from content where id = %s" % str(id)
     cur = conn.cursor()
     cur.execute(sql)
     text = cur.fetchone()
-    url = "%s/%s/地铁延误通知/%s" % (BARK_URL, BARK_KEY, quote_plus(text[0]))
+    url = "%s/%s/地铁延误通知/%s?url=%s" % (BARK_URL, BARK_KEY,
+                                    quote_plus(text[0]), quote_plus(text[1]))
     response = requests.get(url=url)
     print(response.status_code)
 
