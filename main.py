@@ -44,7 +44,7 @@ def create_table():
         return False
 
 
-def get_sz_metro():
+def get_sz_metro(flag):
     cur = conn.cursor()
     url = "https://m.weibo.cn/api/container/getIndex?uid=2311331195&t=0&luicode=10000011&lfid=100103type%3D1%26q%3D%E6%B7%B1%E5%9C%B3%E5%9C%B0%E9%93%81&containerid=1076032311331195"
     headers = {
@@ -79,7 +79,10 @@ def get_sz_metro():
                     conn.execute(insert_sql)
                     conn.commit()
                     print("%s-%s-%s" % (str(id), text, str(edit_count)))
-                    bark_notification(id)
+                    if flag:
+                        bark_notification(id)
+                    else:
+                        print("ok")
     else:
         return False
 
@@ -103,8 +106,14 @@ if __name__ == "__main__":
     if str(now_hour) in ('7', '8', '17', '18'):
         if(int(now_minute) % 5 == 0):
             if create_table():
-                if get_sz_metro():
+                if get_sz_metro(True):
                     print("ok")
         else:
             print("未到执行时间")
+    else:
+        if(int(now_minute) == 0 and int(now_hour) % 2 ==0) or True:
+            # 剩余的时间每2个小时的采集一次信息
+            # 防止在非运行时间段修改了之前的延误信息，会导致到下次开始的时候再推送
+            if create_table():
+                get_sz_metro(False)
     conn.close()
