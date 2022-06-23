@@ -35,9 +35,11 @@ def create_table():
         noti_count TEXT,
         scheme TEXT);
         """
-        #total = """CREATE TABLE IF NOT EXISTS total (total TEXT)"""
+        count = """CREATE TABLE IF NOT EXISTS count
+        (count TEXT,
+        date TEXT);"""
         conn.execute(content)
-        # conn.execute(total)
+        conn.execute(count)
         return True
     except Error:
         print(Error)
@@ -81,8 +83,6 @@ def get_sz_metro(flag):
                     print("%s-%s-%s" % (str(id), text, str(edit_count)))
                     if flag:
                         bark_notification(id)
-                    else:
-                        print("ok")
     else:
         return False
 
@@ -92,28 +92,46 @@ def bark_notification(id):
     cur = conn.cursor()
     cur.execute(sql)
     text = cur.fetchone()
+    cur.close()
     url = "%s/%s/地铁延误通知/%s?url=%s" % (BARK_URL, BARK_KEY,
-                                    quote_plus(text[0]), quote_plus(text[1]))
+                                      quote_plus(text[0]), quote_plus(text[1]))
     response = requests.get(url=url)
-    print(response.status_code)
+    if response.status_code == 200:
+        count_sql = "insert into count values ('1','%s')" % str(
+            datetime.date.today().isoformat())
+        conn.execute(count_sql)
+        conn.commit()
+
+
+def happy():
+    sql = "select * from count where date = '%s'" % str(datetime.date.today().isoformat())
+    cur = conn.cursor()
+    cur.execute(sql)
+    if len(cur.fetchall()) == 0:
+        requests.get("%s/%s/地铁延误通知/暂无延误消息，快乐出行！" % (BARK_URL, BARK_KEY))
+    else:
+        print("已经发过延误消息了")
+    cur.close()
 
 
 if __name__ == "__main__":
+    create_table()
     # 时间仅在早上7:01-8:59执行，晚上5:01-6:59执行
     now = datetime.datetime.now()
     now_hour = now.__getattribute__('hour')
     now_minute = now.__getattribute__('minute')
     if str(now_hour) in ('7', '8', '17', '18'):
         if(int(now_minute) % 5 == 0):
-            if create_table():
-                if get_sz_metro(True):
-                    print("ok")
+            if get_sz_metro(True):
+                print("ok")
         else:
             print("未到执行时间")
     else:
-        if(int(now_minute) == 0 and int(now_hour) % 2 ==0) or True:
+        if(int(now_minute) == 0 and int(now_hour) % 2 == 0):
             # 剩余的时间每2个小时的采集一次信息
             # 防止在非运行时间段修改了之前的延误信息，会导致到下次开始的时候再推送
-            if create_table():
-                get_sz_metro(False)
+            get_sz_metro(False)
+    # 8:15和18:15推送是否有延误的通知信息
+    if str(now_hour) in ('8', '18') and str(now_minute) == 15:
+        happy()
     conn.close()
