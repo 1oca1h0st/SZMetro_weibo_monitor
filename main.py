@@ -8,14 +8,19 @@ from urllib import response
 import requests
 import json
 from urllib.parse import quote, quote_plus
-
+import os
+import configparser
 from black import main
 
-BARK_URL = "https://api.day.app"
-BARK_KEY = ""
+current_dir = os.path.dirname(os.path.abspath(__file__))
+
+conf = configparser.ConfigParser()
+conf.read(os.path.join(current_dir, 'config.ini'))
+BARK_URL = conf.get("BARK", "URL")
+BARK_KEY = conf.get("BARK", "KEY")
 
 try:
-    conn = sqlite3.connect('weibo.db')
+    conn = sqlite3.connect(os.path.join(current_dir, 'weibo.db'))
 except Error:
     print(Error)
     exit()
