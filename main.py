@@ -132,6 +132,6 @@ if __name__ == "__main__":
             # 防止在非运行时间段修改了之前的延误信息，会导致到下次开始的时候再推送
             get_sz_metro(False)
     # 8:15和18:15推送是否有延误的通知信息
-    if str(now_hour) in ('8', '18') and str(now_minute) == 15:
+    if str(now_hour) in ('8', '18') and str(now_minute) == "15":
         happy()
     conn.close()
